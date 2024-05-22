@@ -362,10 +362,9 @@ public class textGraph {
                 }
             }
         }
-
         // 检查目标节点是否可达
         if (!distances.containsKey(word2) || distances.get(word2) == Integer.MAX_VALUE) {
-            return "输入的两个单词不可达！";
+            return "无法到达单词 '" + word2 + "'!";
         }
 
         // 构建最短路径
@@ -376,7 +375,7 @@ public class textGraph {
         if (!allPaths.isEmpty()) {
             result.append("最短路径: ").append(String.join(" -> ", allPaths.get(0))).append("\n");
             if (allPaths.size() > 1) {
-                result.append("到目标单词的其他最短路径共有 ").append(allPaths.size() - 1).append(" 条:\n");
+                result.append("到目标单词的其他最短路径共有 ").append(allPaths.size()-1).append(" 条:\n");
                 for (int i = 1; i < allPaths.size(); i++) {
                     result.append("路径 ").append(i).append(": ").append(String.join(" -> ", allPaths.get(i))).append("\n");
                 }
@@ -467,6 +466,7 @@ public class textGraph {
             currentNode = nextNode;
         }
 
+        System.out.println(pathBuilder.toString());
         // 将游走路径写入文件
         String filePath = "random_walk.txt";
         try (PrintWriter writer = new PrintWriter(filePath)) {
@@ -528,6 +528,11 @@ public class textGraph {
                     lastWord = prevWord; // 保存当前行的最后一个单词
                 }
             }
+
+            // 在读取完文件后，确保最后一个节点被处理
+            if (lastWord != null && !graph.containsKey(lastWord)) {
+                graph.put(lastWord, new HashMap<>());
+            }
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -548,7 +553,6 @@ public class textGraph {
             }
         }
     }
-
     private static void updateGraph(String word1, String word2) {
         // 更新图中的边权重
         graph.putIfAbsent(word1, new HashMap<>());
