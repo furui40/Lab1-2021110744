@@ -1,5 +1,7 @@
 package com.cn;
 import java.io.*;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.util.*;
 
 import guru.nidi.graphviz.engine.*;
@@ -20,12 +22,12 @@ import java.util.Map;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 
-public class textGraph {
+public class TextGraph {
 
     private static Map<String, Map<String, Integer>> graph = new HashMap<>();
+    private static SecureRandom rand = new SecureRandom();
 
 
     public static void main(String[] args) {
@@ -48,7 +50,7 @@ public class textGraph {
             System.out.println("4. 计算最短路径");
             System.out.println("5. 随机游走");
             System.out.println("6. 退出");
-            Scanner scanner = new Scanner(System.in);
+            Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.name());
             int choice = 0;
             while (true) {
                 if (scanner.hasNextInt()) {
@@ -166,13 +168,13 @@ public class textGraph {
         }
 
         // 将图形数据写入临时文件
-        try (BufferedWriter writer = new BufferedWriter(new FileWriter("temp_graph.dot"))) {
+        try (BufferedWriter writer = new BufferedWriter(new OutputStreamWriter(new FileOutputStream("temp_graph.dot"), StandardCharsets.UTF_8))) {
             writer.write("strict digraph G {\n");
             for (DefaultEdge edge : jgraph.edgeSet()) {
                 String source = jgraph.getEdgeSource(edge);
                 String target = jgraph.getEdgeTarget(edge);
                 int weight = (int) jgraph.getEdgeWeight(edge);
-                writer.write(String.format("  \"%s\" -> \"%s\" [label=\"%d\"];\n", source, target, weight));
+                writer.write(String.format("  \"%s\" -> \"%s\" [label=\"%d\"];%n", source, target, weight));
             }
             writer.write("}");
         } catch (IOException e) {
@@ -268,8 +270,7 @@ public class textGraph {
                 // 如果存在符合条件的桥接词
                 if (!selectedBridgeWords.isEmpty()) {
                     // 随机选择一个桥接词，并插入到新文本中
-                    Random random = new Random();
-                    String selectedBridge = selectedBridgeWords.get(random.nextInt(selectedBridgeWords.size()));
+                    String selectedBridge = selectedBridgeWords.get(rand.nextInt(selectedBridgeWords.size()));
                     newText.append(selectedBridge).append(" ");
                 }
             }
@@ -283,9 +284,13 @@ public class textGraph {
     }
     public static String calcShortestPath(String word1, String word2) {
         // 计算最短路径
-        if ((word2 == null && !graph.containsKey(word1)) || (word2 != null && (!graph.containsKey(word1) || !graph.containsKey(word2)))) {
-            return "输入的两个单词不可达！";
+        if(graph.isEmpty()){
+            return "Graph not exists";
         }
+        if ((word2 == null && !graph.containsKey(word1)) || (word2 != null && (!graph.containsKey(word1) || !graph.containsKey(word2)))) {
+            return "The two words Cannot reach";
+        }
+
         if (word2 == null) { // 1个参数
             StringBuilder result = new StringBuilder();
             for (String targetWord : graph.keySet()) {
@@ -294,7 +299,7 @@ public class textGraph {
                         String shortestPath = calcShortestPath(word1, targetWord);
                         result.append(shortestPath).append("\n");
                     } else {
-                        result.append("目标单词 ").append(targetWord).append(" 不在图中\n");
+                        result.append("word1 ").append(targetWord).append(" not in graph\n");
                     }
                 }
             }
@@ -364,28 +369,26 @@ public class textGraph {
         }
         // 检查目标节点是否可达
         if (!distances.containsKey(word2) || distances.get(word2) == Integer.MAX_VALUE) {
-            return "无法到达单词 '" + word2 + "'!";
+            return "Cannot reach'" + word2 + "'!";
         }
 
         // 构建最短路径
         StringBuilder result = new StringBuilder();
-        result.append("最短路径长度: ").append(distances.get(word2)).append("\n");
+        result.append("Shortest path: ").append(distances.get(word2)).append("\n");
 
         List<List<String>> allPaths = paths.get(word2);
         if (!allPaths.isEmpty()) {
-            result.append("最短路径: ").append(String.join(" -> ", allPaths.get(0))).append("\n");
+            result.append("Shortest path: ").append(String.join(" -> ", allPaths.get(0))).append("\n");
             if (allPaths.size() > 1) {
-                result.append("到目标单词的其他最短路径共有 ").append(allPaths.size()-1).append(" 条:\n");
+                result.append("Num of other path ").append(allPaths.size()-1).append(":\n");
                 for (int i = 1; i < allPaths.size(); i++) {
-                    result.append("路径 ").append(i).append(": ").append(String.join(" -> ", allPaths.get(i))).append("\n");
+                    result.append("Path ").append(i).append(": ").append(String.join(" -> ", allPaths.get(i))).append("\n");
                 }
             }
         }
 
         return result.toString();
     }
-
-
 
 
 
@@ -416,7 +419,7 @@ public class textGraph {
         String currentNode = getRandomNode();
 
         // 创建一个Scanner对象，用于读取用户输入
-        Scanner scanner = new Scanner(System.in);
+        Scanner scanner = new Scanner(System.in, StandardCharsets.UTF_8.name());
 
         // 开始游走循环
         while (true) {
@@ -440,8 +443,9 @@ public class textGraph {
 
             // 随机选择下一个节点
             List<String> nextNodes = new ArrayList<>();
-            for (String neighbor : neighbors.keySet()) {
-                int weight = neighbors.get(neighbor); // 获取邻居节点的权重
+            for (Map.Entry<String, Integer> entry : neighbors.entrySet()) {
+                String neighbor = entry.getKey(); // 获取邻居节点
+                int weight = entry.getValue(); // 获取邻居节点的权重
                 // 将邻居节点根据权重添加多次到列表中
                 for (int i = 0; i < weight; i++) {
                     nextNodes.add(neighbor);
@@ -469,7 +473,7 @@ public class textGraph {
         System.out.println(pathBuilder.toString());
         // 将游走路径写入文件
         String filePath = "random_walk.txt";
-        try (PrintWriter writer = new PrintWriter(filePath)) {
+        try (PrintWriter writer = new PrintWriter(new OutputStreamWriter(new FileOutputStream(filePath), StandardCharsets.UTF_8))) {
             writer.println(pathBuilder.toString());
         } catch (FileNotFoundException e) {
             e.printStackTrace();
@@ -483,19 +487,17 @@ public class textGraph {
     private static String getRandomNode() {
         // 获取图中所有节点构成的列表
         List<String> nodes = new ArrayList<>(graph.keySet());
-        // 创建一个Random对象，用于生成随机数
-        Random random = new Random();
         // 生成一个随机索引，范围为节点列表的大小
-        int randomIndex = random.nextInt(nodes.size());
+        int randomIndex = rand.nextInt(nodes.size());
         // 返回随机选择的节点
         return nodes.get(randomIndex);
     }
 
 
 
-    private static void buildGraphFromFile(String fileName) {
+    public static void buildGraphFromFile(String fileName) {
         // 从文件构建图
-        try (BufferedReader br = new BufferedReader(new FileReader(fileName))) {
+        try (BufferedReader br = new BufferedReader(new InputStreamReader(new FileInputStream(fileName), StandardCharsets.UTF_8))) {
             String prevWord = null; // 上一行的最后一个单词
             String lastWord = null; // 当前行的最后一个单词
             String line;
@@ -514,6 +516,7 @@ public class textGraph {
                     String word2 = words[0];
                     updateGraph(word1, word2);
                 }
+
                 // 遍历当前行的单词对，更新图的边权重
                 for (int i = 0; i < words.length - 1; i++) {
                     String word1 = words[i];
@@ -522,6 +525,7 @@ public class textGraph {
                         updateGraph(word1, word2);
                     }
                 }
+
                 // 更新上一行的最后一个单词为当前行的最后一个单词
                 if (words.length > 0 && !words[words.length - 1].isEmpty()) {
                     prevWord = words[words.length - 1];
@@ -538,20 +542,20 @@ public class textGraph {
         }
 
         // 打印构建的图（带边权重）
-        System.out.println("构建的有向图（带边权重）：");
+//        System.out.println("构建的有向图（带边权重）：");
         // 遍历图中的节点及其邻居，并打印边的权重
-        for (Map.Entry<String, Map<String, Integer>> entry : graph.entrySet()) {
-            // 遍历图中的每个节点及其对应的边权重映射
-            String word = entry.getKey(); // 获取当前节点
-            Map<String, Integer> edgeMap = entry.getValue(); // 获取当前节点的边权重映射
-            for (Map.Entry<String, Integer> edgeEntry : edgeMap.entrySet()) {
-                // 遍历当前节点的每条边及其对应的权重
-                String neighbor = edgeEntry.getKey(); // 获取相邻节点
-                int weight = edgeEntry.getValue(); // 获取边的权重
-                // 打印当前节点到相邻节点的边及其权重
-                System.out.println(word + " -> " + neighbor + ", 权重: " + weight);
-            }
-        }
+//        for (Map.Entry<String, Map<String, Integer>> entry : graph.entrySet()) {
+//            // 遍历图中的每个节点及其对应的边权重映射
+//            String word = entry.getKey(); // 获取当前节点
+//            Map<String, Integer> edgeMap = entry.getValue(); // 获取当前节点的边权重映射
+//            for (Map.Entry<String, Integer> edgeEntry : edgeMap.entrySet()) {
+//                // 遍历当前节点的每条边及其对应的权重
+//                String neighbor = edgeEntry.getKey(); // 获取相邻节点
+//                int weight = edgeEntry.getValue(); // 获取边的权重
+//                // 打印当前节点到相邻节点的边及其权重
+//                System.out.println(word + " -> " + neighbor + ", 权重: " + weight);
+//            }
+//        }
     }
     private static void updateGraph(String word1, String word2) {
         // 更新图中的边权重

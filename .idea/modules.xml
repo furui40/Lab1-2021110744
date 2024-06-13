@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/flab1/flab1/mylab.iml" filepath="$PROJECT_DIR$/flab1/flab1/mylab.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/new.iml" filepath="$PROJECT_DIR$/.idea/new.iml" />
+    </modules>
+  </component>
+</project>
